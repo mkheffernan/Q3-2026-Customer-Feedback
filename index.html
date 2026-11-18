@@ -365,6 +365,32 @@ function openQualitySkuModal(psku){
   document.getElementById('sku-modal').style.display='flex';
 }
 
+function openQualityIssueModal(issue, cat){
+  var rows = RAW_FB.filter(function(r){return r.cat===cat && r.norm_issue===issue;});
+  if(!rows.length) return;
+  document.getElementById('sku-modal-title').textContent = issue;
+  document.getElementById('sku-modal-sub').textContent = cat+' \u00b7 '+rows.length+' report'+(rows.length>1?'s':'');
+  var html='';
+  rows.forEach(function(r){
+    var ph='';
+    if(r.photos){
+      r.photos.split(', ').forEach(function(u){
+        ph+='<a class="photo-link" href="'+u+'" target="_blank">View</a> ';
+      });
+    } else { ph='\u2014'; }
+    html+='<tr>'
+      +'<td>'+r.sub+'</td>'
+      +'<td style="font-weight:500">'+r.item+'</td>'
+      +'<td style="font-family:DM Mono,monospace;font-size:11px;color:var(--muted)">'+r.sku+'</td>'
+      +'<td><span class="badge badge-iss">'+r.issue.split(',')[0].trim()+'</span></td>'
+      +'<td style="color:var(--muted)">'+(r.feedback||'\u2014')+'</td>'
+      +'<td>'+ph+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('sku-modal-body').innerHTML=html;
+  document.getElementById('sku-modal').style.display='flex';
+}
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function hBarChart(id, data, lk, vk, color){
   dc(id);
@@ -631,7 +657,7 @@ function renderQuality(){
    +'<div class="kpi"><div class="kpi-label">\ud83d\udfe1 Women\u2019s</div><div class="kpi-val plum">'+D.fb_womens_total+'</div></div>'
    +'<div class="kpi"><div class="kpi-label">\ud83c\udff7\ufe0f Unique SKUs</div><div class="kpi-val sage">'+new Set(RAW_FB.map(function(r){return r.psku;})).size+'</div></div>';
 
-  function qImpact(elId,issues,cc){
+  function qImpact(elId,issues,cc,cat){
     var el=document.getElementById(elId);
     el.innerHTML='';
     issues.slice(0,3).forEach(function(r){
@@ -639,11 +665,12 @@ function renderQuality(){
       div.className='impact-card '+cc;
       div.innerHTML='<div class="impact-issue">'+r.issue+'</div>'
         +'<div class="impact-count">'+r.count+' report'+(r.count>1?'s':'')+'</div>';
+      div.addEventListener('click',function(){openQualityIssueModal(r.issue,cat);});
       el.appendChild(div);
     });
   }
-  qImpact('impact-quality-mens',  D.fb_mens.top_issues,  'impact-card-m');
-  qImpact('impact-quality-womens',D.fb_womens.top_issues,'impact-card-w');
+  qImpact('impact-quality-mens',  D.fb_mens.top_issues,  'impact-card-m',"Men's");
+  qImpact('impact-quality-womens',D.fb_womens.top_issues,'impact-card-w',"Women's");
 
   function qSkuSummary(elId,fbData,isMens){
     var dots=isMens?['#5BB8F5','#3A9FD8','#1D6EA0']:['#F5D76E','#E6B830','#C99B10'];
